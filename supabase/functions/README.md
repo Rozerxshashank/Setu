@@ -7,23 +7,26 @@ These Edge Functions will replace Firebase Cloud Functions as part of the
 
 ## Current Functions
 
-| Function         | Method | Status      | Description                       |
-|------------------|--------|-------------|-----------------------------------|
-| `health-check`   | GET    | Scaffolded  | Runtime health verification       |
-| `process-audio`  | POST   | Not started | Audio → Gemini → DailyLog pipeline|
-| `create-circle`  | POST   | Not started | Family circle creation            |
-| `join-circle`    | POST   | Not started | Invite redemption                 |
-| `daily-scheduler`| POST   | Not started | pg_cron triggered daily pipeline  |
+| Function         | Method | Status        | Auth     | DB Tables                         | Description                       |
+|------------------|--------|---------------|----------|-----------------------------------|-----------------------------------|
+| `health-check`   | GET    | Scaffolded    | None     | —                                 | Runtime health verification       |
+| `create-circle`  | POST   | Implemented   | Required | `family_circles`, `circle_members`| Family circle creation            |
+| `process-audio`  | POST   | Not started   | Required | `daily_logs`                      | Audio → Gemini → DailyLog pipeline|
+| `join-circle`    | POST   | Not started   | Required | `circle_members`, `invites`       | Invite redemption                 |
+| `daily-scheduler`| POST   | Not started   | Service  | `check_in_states`, `daily_logs`   | pg_cron triggered daily pipeline  |
 
 ## Project Structure
 
 ```
 supabase/functions/
 ├── _shared/
-│   └── cors.ts           # Reusable CORS headers
+│   ├── cors.ts              # Reusable CORS headers
+│   └── supabase-admin.ts    # Service-role admin client factory
+├── create-circle/
+│   └── index.ts             # Family circle creation
 ├── health-check/
-│   └── index.ts          # Health check endpoint
-└── README.md             # This file
+│   └── index.ts             # Health check endpoint
+└── README.md                # This file
 ```
 
 ## Required Secrets
@@ -75,6 +78,30 @@ Expected response:
   "status": "ok",
   "service": "supabase-edge-functions",
   "timestamp": "2026-08-22T17:30:00.000Z"
+}
+```
+
+### Test create-circle locally
+
+```bash
+# Should fail with 401 (no auth header)
+curl -i -X POST http://localhost:54321/functions/v1/create-circle \
+  -H 'Content-Type: application/json' \
+  -d '{"elder_name": "Test", "consent_granted": true}'
+
+# With a valid JWT:
+curl -i -X POST http://localhost:54321/functions/v1/create-circle \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{"elder_name": "Amma", "consent_granted": true}'
+```
+
+Expected success response:
+
+```json
+{
+  "success": true,
+  "circle_id": "<uuid>"
 }
 ```
 
