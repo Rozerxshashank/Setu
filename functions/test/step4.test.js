@@ -19,6 +19,19 @@ describe('Step 4 Pipeline Logic', () => {
     // 3. Stub the actual methods on the initialized db and bucket
     const db = admin.firestore();
     firestoreStub = sinon.stub(db, 'collection');
+    sinon.stub(db, 'runTransaction').callsFake(async (cb) => {
+        const transactionMock = {
+            get: sinon.stub().callsFake(async (ref) => {
+                if (ref && ref.get) return ref.get();
+                return { exists: false, data: () => ({}) };
+            }),
+            set: sinon.stub().callsFake((ref, data) => {
+                if (ref && ref.create) ref.create(data);
+            }),
+            update: sinon.stub()
+        };
+        return cb(transactionMock);
+    });
     
     const storage = admin.storage();
     storageStub = sinon.stub(storage, 'bucket');
@@ -44,8 +57,14 @@ describe('Step 4 Pipeline Logic', () => {
        id: 'log_test_m4a'
     };
 
+    const taskDocMock = {
+       get: sinon.stub().resolves({ exists: true, data: () => ({ status: 'pending' }) })
+    };
+
     const tasksMock = {
-       get: sinon.stub().resolves({ docs: [] })
+       where: sinon.stub().returnsThis(),
+       get: sinon.stub().resolves({ docs: [] }),
+       doc: sinon.stub().returns(taskDocMock)
     };
 
     docMock.collection.withArgs('dailyLogs').returns({ doc: sinon.stub().returns(logDocMock) });
