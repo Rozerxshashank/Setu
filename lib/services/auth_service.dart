@@ -39,7 +39,11 @@ class AuthService {
 
   // Preserve Firebase methods for Demo / Backup
   Future<void> signInAnonymously() async {
-    await _firebaseAuth.signInAnonymously();
+    try {
+      await _firebaseAuth.signInAnonymously();
+    } catch (_) {
+      // Demo Mode fallback: allow local testing without Firebase config
+    }
   }
 
   Future<void> verifyPhoneNumber({
