@@ -6,7 +6,20 @@ class FamilyCircleSummaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Circle Ready!')),
+      appBar: AppBar(
+        title: const Text('Circle Ready!'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/invite_member');
+            }
+          },
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -33,7 +46,6 @@ class FamilyCircleSummaryScreen extends StatelessWidget {
                 minimumSize: const Size(double.infinity, 60),
               ),
               onPressed: () {
-                // Return to dashboard but we'll show empty state still since it's just step 2
                 Navigator.pushNamedAndRemoveUntil(
                   context,
                   '/home',

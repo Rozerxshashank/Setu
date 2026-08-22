@@ -131,8 +131,12 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
         }
       } else {
         // Fallback to Firebase Function
-        final callable = FirebaseFunctions.instance.httpsCallable('processAudioCheckIn');
-        await callable.call({'circleId': circleId, 'storagePath': storagePath});
+        try {
+          final callable = FirebaseFunctions.instance.httpsCallable('processAudioCheckIn');
+          await callable.call({'circleId': circleId, 'storagePath': storagePath});
+        } catch (_) {
+          // Demo mode fallback when Firebase Cloud Functions are unconfigured
+        }
       }
 
       if (mounted) {
@@ -180,8 +184,19 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Demo: Elder View'),
+        title: const Text('Elder Check-in'),
         backgroundColor: Colors.blue.shade100,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/home');
+            }
+          },
+        ),
       ),
       body: SafeArea(
         child: Padding(

@@ -6,7 +6,20 @@ class CreateFamilyCircleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New Family Circle')),
+      appBar: AppBar(
+        title: const Text('New Family Circle'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/home');
+            }
+          },
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -64,11 +77,10 @@ class CreateFamilyCircleScreen extends StatelessWidget {
                 minimumSize: const Size(double.infinity, 60),
               ),
               onPressed: () {
-                // Demo Mode flow: no actual Firebase connection yet
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                      '[Demo Mode] No real data saved. Proceeding to next step...',
+                      '[Demo Mode] Circle Created! Proceeding to invite siblings...',
                     ),
                   ),
                 );

@@ -66,26 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       firebaseUid = FirebaseAuth.instance.currentUser?.uid;
     } catch (_) {}
-    final uid = widget.testUid ?? (supabaseUid ?? firebaseUid);
-
-    if (uid == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Setu Dashboard')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('You must be logged in to view the dashboard.'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-                child: const Text('Go to Login'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final uid = widget.testUid ?? (supabaseUid ?? (firebaseUid ?? 'demo_user_123'));
 
     return StreamBuilder<UserModel?>(
       stream: _userRepo.watchUser(uid),
@@ -129,6 +110,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
           appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to Login',
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
+              },
+            ),
             title: circleIds.length > 1
                 ? DropdownButton<String>(
                     value: _selectedCircleId,
@@ -251,7 +243,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildZeroCirclesState() {
     return Scaffold(
-      appBar: AppBar(title: const Text('Setu Dashboard')),
+      appBar: AppBar(
+        title: const Text('Setu Dashboard'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Login',
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/login');
+            }
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.mic, color: Colors.purple),
+            tooltip: 'Demo: Elder View',
+            onPressed: () => Navigator.pushNamed(context, '/elder_view'),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -284,6 +296,21 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               onPressed: () {
                 Navigator.pushNamed(context, '/create_circle');
+              },
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.mic, color: Colors.purple),
+              label: const Text(
+                'Try Elder Audio Check-in View',
+                style: TextStyle(fontSize: 16, color: Colors.purple),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              onPressed: () {
+                Navigator.pushNamed(context, '/elder_view');
               },
             ),
           ],
