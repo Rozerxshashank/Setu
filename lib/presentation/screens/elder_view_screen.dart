@@ -6,6 +6,8 @@ import '../../services/supabase_storage_service.dart';
 import '../../models/task_model.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/firebase_task_repository.dart';
+import '../../repositories/supabase_task_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ElderViewScreen extends StatefulWidget {
   final TaskRepository? taskRepo;
@@ -27,7 +29,11 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
   @override
   void initState() {
     super.initState();
-    _taskRepo = widget.taskRepo ?? FirebaseTaskRepository();
+    bool isSupabase = false;
+    try {
+      isSupabase = Supabase.instance.client.auth.currentUser != null;
+    } catch (_) {}
+    _taskRepo = widget.taskRepo ?? (isSupabase ? SupabaseTaskRepository() : FirebaseTaskRepository());
   }
 
   @override

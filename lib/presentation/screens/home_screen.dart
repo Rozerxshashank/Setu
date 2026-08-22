@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/daily_log.dart';
 import '../../models/user_model.dart';
 import '../../repositories/user_repository.dart';
 import '../../repositories/daily_log_repository.dart';
 import '../../repositories/firebase_user_repository.dart';
 import '../../repositories/firebase_daily_log_repository.dart';
+import '../../repositories/supabase_user_repository.dart';
+import '../../repositories/supabase_daily_log_repository.dart';
+import '../../repositories/supabase_task_repository.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/firebase_task_repository.dart';
 import '../widgets/daily_log_card.dart';
@@ -35,21 +39,34 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _userRepo = widget.userRepo ?? FirebaseUserRepository();
-    _logRepo = widget.logRepo ?? FirebaseDailyLogRepository();
-    _taskRepo = widget.taskRepo ?? FirebaseTaskRepository();
+    bool isSupabase = false;
+    try {
+      isSupabase = Supabase.instance.client.auth.currentUser != null;
+    } catch (_) {}
+
+    _userRepo = widget.userRepo ?? (isSupabase ? SupabaseUserRepository() : FirebaseUserRepository());
+    _logRepo = widget.logRepo ?? (isSupabase ? SupabaseDailyLogRepository() : FirebaseDailyLogRepository());
+    _taskRepo = widget.taskRepo ?? (isSupabase ? SupabaseTaskRepository() : FirebaseTaskRepository());
     
     // Initialize notifications (requests permission and registers FCM token)
     try {
       NotificationService().initialize();
-    } catch (e) {
+    } catch (_) {
       // Ignore during widget tests where Firebase isn't initialized
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final uid = widget.testUid ?? FirebaseAuth.instance.currentUser?.uid;
+    String? supabaseUid;
+    try {
+      supabaseUid = Supabase.instance.client.auth.currentUser?.id;
+    } catch (_) {}
+    String? firebaseUid;
+    try {
+      firebaseUid = FirebaseAuth.instance.currentUser?.uid;
+    } catch (_) {}
+    final uid = widget.testUid ?? (supabaseUid ?? firebaseUid);
 
     if (uid == null) {
       return Scaffold(
