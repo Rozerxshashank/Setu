@@ -137,16 +137,18 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ── 4. Idempotency check ──
+    // ── 4. Idempotency check (via RPC processing_key) ──
+    // The RPC itself handles idempotency. We still do a quick pre-check
+    // to avoid downloading audio + calling Gemini for known duplicates.
     const { data: existingLog } = await adminClient
       .from('daily_logs')
       .select('id')
-      .eq('audio_url', body.audio_path)
+      .eq('processing_key', body.audio_path)
       .maybeSingle();
 
     if (existingLog) {
       return new Response(
-        JSON.stringify({ success: true, log_id: existingLog.id, cached: true }),
+        JSON.stringify({ success: true, log_id: existingLog.id, duplicate: true }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
@@ -289,20 +291,30 @@ Pending Tasks: ${JSON.stringify(tasksForPrompt)}`;
     const medicationTaken = mapMedicationTaken(llmResult.medicationStatus);
     const today = new Date().toISOString().split('T')[0];
 
-    // ── 9. Insert daily_log ──
-    const { data: logData, error: logError } = await adminClient
-      .from('daily_logs')
-      .insert({
-        circle_id: body.circle_id,
-        date: today,
-        status: status,
-        transcript: llmResult.summary, // Gemini extracted from audio directly
-        summary: llmResult.summary,
-        medication_taken: medicationTaken,
-        flagged_concerns: llmResult.flaggedConcerns ?? [],
-        responded_at: new Date().toISOString(),
-        audio_url: body.audio_path,
-        provenance: {
+    // ── 9. Build task updates array for RPC ──
+    const taskUpdates = (pendingTasks || []).map((pendingTask) => {
+      const extracted = (llmResult.taskResponses || []).find(
+        (tr) => tr.taskId === pendingTask.id,
+      );
+      return {
+        task_id: pendingTask.id,
+        new_status: (extracted && extracted.status === 'answered') ? 'acknowledged' : 'delivered',
+      };
+    });
+
+    // ── 10. Atomic RPC: create daily_log + update tasks ──
+    const { data: rpcResult, error: rpcError } = await adminClient
+      .rpc('create_daily_log_with_tasks', {
+        p_circle_id: body.circle_id,
+        p_date: today,
+        p_status: status,
+        p_transcript: llmResult.summary,
+        p_summary: llmResult.summary,
+        p_medication_taken: medicationTaken,
+        p_flagged_concerns: llmResult.flaggedConcerns ?? [],
+        p_responded_at: new Date().toISOString(),
+        p_audio_url: body.audio_path,
+        p_provenance: {
           sourceChannel: 'elder_view_app',
           processingEngine: 'gemini-2.0-flash',
           sttEngine: 'gemini-multimodal',
@@ -311,49 +323,35 @@ Pending Tasks: ${JSON.stringify(tasksForPrompt)}`;
           confidenceScore: llmResult.confidenceScore,
           sentiment: llmResult.sentiment,
         },
-      })
-      .select('id')
-      .single();
+        p_processing_key: body.audio_path,
+        p_task_updates: taskUpdates,
+      });
 
-    if (logError || !logData) {
-      console.error('Daily log insert failed:', logError);
+    if (rpcError) {
+      console.error('RPC create_daily_log_with_tasks failed:', rpcError);
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to save check-in record' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    // ── 10. Process task responses ──
-    if (pendingTasks && pendingTasks.length > 0 && llmResult.taskResponses) {
-      for (const pendingTask of pendingTasks) {
-        const extracted = llmResult.taskResponses.find(
-          (tr) => tr.taskId === pendingTask.id,
-        );
-
-        let newStatus = 'delivered';
-        if (extracted && extracted.status === 'answered') {
-          newStatus = 'acknowledged';
-        }
-
-        await adminClient
-          .from('tasks')
-          .update({
-            status: newStatus,
-            delivered_in_checkin_date: today,
-          })
-          .eq('id', pendingTask.id)
-          .eq('status', 'pending'); // guard: don't downgrade
-      }
+    // RPC returns JSONB: { success, duplicate, daily_log_id } or { success, error }
+    if (!rpcResult.success) {
+      return new Response(
+        JSON.stringify({ success: false, error: rpcResult.error || 'Database write failed' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     // ── 11. Success ──
     return new Response(
       JSON.stringify({
         success: true,
-        log_id: logData.id,
+        log_id: rpcResult.daily_log_id,
         status: status,
+        duplicate: rpcResult.duplicate || false,
       }),
-      { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: rpcResult.duplicate ? 200 : 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (err) {
     console.error('Unhandled error in process-audio-checkin:', err);

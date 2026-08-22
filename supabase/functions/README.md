@@ -158,6 +158,15 @@ Expected success response:
 }
 ```
 
+## Daily Log Atomic Layer (Phase 10)
+
+- **RPC Name**: `create_daily_log_with_tasks`
+- **Idempotency Strategy**: Uses `processing_key = audio_path` with a unique index on `public.daily_logs(processing_key)`. If a duplicate `processing_key` is submitted, the RPC immediately returns `{ "success": true, "duplicate": true, "daily_log_id": "<existing-id>" }` without creating duplicate records.
+- **Task State Machine**:
+  - Allowed transitions: `pending` → `delivered`, `pending` → `acknowledged`
+  - Enforced via SQL guard (`WHERE status = 'pending'`). Non-pending tasks cannot be downgraded or mutated.
+- **Atomicity**: Writes `daily_logs` and updates affected `tasks` in a single PostgreSQL transaction inside a `SECURITY DEFINER` function.
+
 ## Deployment
 
 > Do NOT deploy until the relevant migration phase is approved.
@@ -187,3 +196,4 @@ curl -i https://<YOUR_PROJECT_REF>.supabase.co/functions/v1/health-check
 - Import from `https://esm.sh/` for npm packages.
 - The `_shared/` directory is not deployed as a function; it is only
   used for shared imports.
+
