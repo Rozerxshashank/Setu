@@ -11,8 +11,9 @@ These Edge Functions will replace Firebase Cloud Functions as part of the
 |------------------|--------|---------------|----------|-----------------------------------|-----------------------------------|
 | `health-check`   | GET    | Scaffolded    | None     | —                                 | Runtime health verification       |
 | `create-circle`  | POST   | Implemented   | Required | `family_circles`, `circle_members`| Family circle creation            |
+| `create-invite`  | POST   | Implemented   | Required | `invites`, `circle_members`       | Invite creation (primary only)    |
+| `join-circle`    | POST   | Implemented   | Required | `circle_members`, `invites`       | Invite redemption                 |
 | `process-audio`  | POST   | Not started   | Required | `daily_logs`                      | Audio → Gemini → DailyLog pipeline|
-| `join-circle`    | POST   | Not started   | Required | `circle_members`, `invites`       | Invite redemption                 |
 | `daily-scheduler`| POST   | Not started   | Service  | `check_in_states`, `daily_logs`   | pg_cron triggered daily pipeline  |
 
 ## Project Structure
@@ -23,9 +24,16 @@ supabase/functions/
 │   ├── cors.ts              # Reusable CORS headers
 │   └── supabase-admin.ts    # Service-role admin client factory
 ├── create-circle/
-│   └── index.ts             # Family circle creation
+│   ├── index.ts             # Family circle creation
+│   └── index.test.ts        # Contract tests
+├── create-invite/
+│   ├── index.ts             # Invite creation (primary only)
+│   └── index.test.ts        # Contract tests
 ├── health-check/
 │   └── index.ts             # Health check endpoint
+├── join-circle/
+│   ├── index.ts             # Invite redemption
+│   └── index.test.ts        # Contract tests
 └── README.md                # This file
 ```
 
@@ -94,6 +102,48 @@ curl -i -X POST http://localhost:54321/functions/v1/create-circle \
   -H 'Authorization: Bearer <USER_JWT>' \
   -H 'Content-Type: application/json' \
   -d '{"elder_name": "Amma", "consent_granted": true}'
+```
+
+Expected success response:
+
+```json
+{
+  "success": true,
+  "circle_id": "<uuid>"
+}
+```
+
+### Test create-invite locally
+
+```bash
+# Without auth (should return 401)
+curl -i -X POST http://localhost:54321/functions/v1/create-invite \
+  -H 'Content-Type: application/json' \
+  -d '{"circle_id": "<uuid>", "role": "member"}'
+
+# With auth (must be primary member)
+curl -i -X POST http://localhost:54321/functions/v1/create-invite \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{"circle_id": "<uuid>", "role": "member"}'
+```
+
+Expected success response:
+
+```json
+{
+  "success": true,
+  "invite_id": "<uuid>"
+}
+```
+
+### Test join-circle locally
+
+```bash
+curl -i -X POST http://localhost:54321/functions/v1/join-circle \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{"invite_id": "<uuid>"}'
 ```
 
 Expected success response:
