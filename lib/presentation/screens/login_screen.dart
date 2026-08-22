@@ -1,98 +1,66 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final AuthService? authService;
+  const LoginScreen({super.key, this.authService});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _authService = AuthService();
-  final _phoneController = TextEditingController();
-  final _otpController = TextEditingController();
+  late final AuthService _authService = widget.authService ?? AuthService();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController(); // For Signup
 
   bool _isLoading = false;
-  bool _isOtpSent = false;
-  String? _verificationId;
+  bool _isSignupMode = false;
 
-  Future<void> _sendOtp() async {
-    final phone = _phoneController.text.trim();
-    if (phone.isEmpty) return;
+  Future<void> _submitAuth() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final name = _nameController.text.trim();
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await _authService.verifyPhoneNumber(
-        phoneNumber: '+91$phone',
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          // Auto-resolution (often works on Android)
-          try {
-            await FirebaseAuth.instance.signInWithCredential(credential);
-            if (mounted) {
-              Navigator.pushReplacementNamed(context, '/profile_setup');
-            }
-          } catch (e) {
-            _showError('Verification failed. Please try again.');
-          }
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          _showError('Phone verification failed. Please check your number and network connection.');
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          if (mounted) {
-            setState(() {
-              _verificationId = verificationId;
-              _isOtpSent = true;
-              _isLoading = false;
-            });
-          }
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          if (mounted) {
-            setState(() {
-              _verificationId = verificationId;
-            });
-          }
-        },
-      );
-    } catch (e) {
-      _showError('Unable to send OTP. Please try again later.');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Please enter email and password.');
+      return;
     }
-  }
-
-  Future<void> _verifyOtp() async {
-    final otp = _otpController.text.trim();
-    if (otp.isEmpty || _verificationId == null) return;
+    
+    if (_isSignupMode && name.isEmpty) {
+      _showError('Please enter your name for signup.');
+      return;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _authService.verifyOtp(
-        verificationId: _verificationId!,
-        smsCode: otp,
-      );
+      if (_isSignupMode) {
+        await _authService.signUp(email, password, name);
+        // Supabase might require email confirmation, but assuming auto-confirm for now
+      } else {
+        await _authService.signIn(email, password);
+      }
+      
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/profile_setup');
       }
+    } on AuthException catch (e) {
+      // Do not expose raw exception, use user friendly messages
+      if (e.message.contains('Invalid login credentials')) {
+        _showError('Invalid email or password. Please try again.');
+      } else if (e.message.contains('already registered')) {
+        _showError('An account with this email already exists.');
+      } else {
+        _showError('Authentication failed. Please check your details.');
+      }
     } catch (e) {
-      _showError('Invalid or expired OTP. Please try again.');
+      _showError('Unable to connect. Check your internet connection.');
+    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -129,46 +97,57 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
+      appBar: AppBar(title: Text(_isSignupMode ? 'Create Account' : 'Login')),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              _isOtpSent ? 'Enter OTP' : 'Enter your phone number',
+              _isSignupMode ? 'Sign up for Setu' : 'Welcome back to Setu',
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            if (!_isOtpSent)
+            if (_isSignupMode)
               Semantics(
-                label: 'Phone number input field',
+                label: 'Name input field',
                 child: TextField(
-                  controller: _phoneController,
+                  controller: _nameController,
                   decoration: const InputDecoration(
-                    labelText: 'Phone Number',
-                    border: OutlineInputBorder(),
-                    prefixText: '+91 ',
-                  ),
-                  keyboardType: TextInputType.phone,
-                  style: const TextStyle(fontSize: 18),
-                ),
-              )
-            else
-              Semantics(
-                label: 'OTP input field',
-                child: TextField(
-                  controller: _otpController,
-                  decoration: const InputDecoration(
-                    labelText: '6-digit OTP',
+                    labelText: 'Full Name',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.number,
                   style: const TextStyle(fontSize: 18),
                 ),
               ),
+            if (_isSignupMode) const SizedBox(height: 16),
+            Semantics(
+              label: 'Email input field',
+              child: TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Semantics(
+              label: 'Password input field',
+              child: TextField(
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
             const SizedBox(height: 32),
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -177,13 +156,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       minimumSize: const Size(double.infinity, 60),
                     ),
-                    onPressed: _isOtpSent ? _verifyOtp : _sendOtp,
+                    onPressed: _submitAuth,
                     child: Text(
-                      _isOtpSent ? 'Verify OTP' : 'Send OTP',
+                      _isSignupMode ? 'Sign Up' : 'Login',
                       style: const TextStyle(fontSize: 18),
                     ),
                   ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _isSignupMode = !_isSignupMode;
+                });
+              },
+              child: Text(
+                _isSignupMode 
+                  ? 'Already have an account? Login' 
+                  : 'Don\'t have an account? Sign Up',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 32),
             const Divider(),
             const SizedBox(height: 16),
             const Text(

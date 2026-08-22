@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'presentation/screens/splash_screen.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/profile_setup_screen.dart';
@@ -10,6 +11,12 @@ import 'presentation/screens/elder_view_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await Supabase.initialize(
+    url: const String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://test.supabase.co'),
+    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'test_anon_key'),
+  );
+
   // TODO: Import firebase_core and firebase_app_check and uncomment below
   // Use DefaultFirebaseOptions.currentPlatform when firebase_options.dart is generated
   // await Firebase.initializeApp();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/user_model.dart';
 import '../../repositories/firebase_user_repository.dart';
 
@@ -13,6 +14,16 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _nameController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill name if available from Supabase Auth metadata
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null && user.userMetadata?['name'] != null) {
+      _nameController.text = user.userMetadata!['name'] as String;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,17 +66,28 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       });
 
                       try {
-                        final uid = FirebaseAuth.instance.currentUser?.uid;
-                        if (uid != null) {
+                        final supabaseUser = Supabase.instance.client.auth.currentUser;
+                        final firebaseUid = FirebaseAuth.instance.currentUser?.uid;
+
+                        if (supabaseUser != null) {
+                          // Save to Supabase Postgres (public.profiles)
+                          await Supabase.instance.client.from('profiles').upsert({
+                            'id': supabaseUser.id,
+                            'name': _nameController.text.trim(),
+                            'phone_number': supabaseUser.phone ?? 'Unknown',
+                          });
+                        } else if (firebaseUid != null) {
+                          // Save to Firebase (Demo Mode)
                           final userRepo = FirebaseUserRepository();
                           await userRepo.createUser(UserModel(
-                            userId: uid,
+                            userId: firebaseUid,
                             name: _nameController.text.trim(),
                             phoneNumber: 'Unknown',
                             circleIds: [],
                             fcmTokens: [],
                           ));
                         }
+                        
                         if (mounted) {
                           Navigator.pushReplacementNamed(context, '/home');
                         }
