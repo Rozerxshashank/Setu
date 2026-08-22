@@ -1,0 +1,109 @@
+# Supabase Edge Functions — Setu
+
+## Overview
+
+These Edge Functions will replace Firebase Cloud Functions as part of the
+₹0 Supabase migration. They run on Deno Deploy via the Supabase free tier.
+
+## Current Functions
+
+| Function         | Method | Status      | Description                       |
+|------------------|--------|-------------|-----------------------------------|
+| `health-check`   | GET    | Scaffolded  | Runtime health verification       |
+| `process-audio`  | POST   | Not started | Audio → Gemini → DailyLog pipeline|
+| `create-circle`  | POST   | Not started | Family circle creation            |
+| `join-circle`    | POST   | Not started | Invite redemption                 |
+| `daily-scheduler`| POST   | Not started | pg_cron triggered daily pipeline  |
+
+## Project Structure
+
+```
+supabase/functions/
+├── _shared/
+│   └── cors.ts           # Reusable CORS headers
+├── health-check/
+│   └── index.ts          # Health check endpoint
+└── README.md             # This file
+```
+
+## Required Secrets
+
+These secrets must be configured in the Supabase Dashboard under
+**Project Settings → Edge Functions → Secrets** before deploying
+functions that depend on them.
+
+| Secret                      | Used By           | Phase |
+|-----------------------------|-------------------|-------|
+| `SUPABASE_URL`              | All functions     | 6     |
+| `SUPABASE_SERVICE_ROLE_KEY` | All functions     | 6     |
+| `GEMINI_API_KEY`            | `process-audio`   | 8+    |
+| `FCM_SERVICE_ACCOUNT_JSON`  | `daily-scheduler` | 10+   |
+
+> **IMPORTANT**: Never commit secret values to source control.
+> Secrets are injected at runtime by the Supabase platform.
+
+## Local Development
+
+### Prerequisites
+
+- [Supabase CLI](https://supabase.com/docs/guides/cli) installed
+- Docker running (required by `supabase start`)
+
+### Run locally
+
+```bash
+# Start local Supabase (if not already running)
+supabase start
+
+# Serve all Edge Functions locally
+supabase functions serve
+
+# Serve a single function
+supabase functions serve health-check
+```
+
+### Test the health-check endpoint locally
+
+```bash
+curl -i http://localhost:54321/functions/v1/health-check
+```
+
+Expected response:
+
+```json
+{
+  "status": "ok",
+  "service": "supabase-edge-functions",
+  "timestamp": "2026-08-22T17:30:00.000Z"
+}
+```
+
+## Deployment
+
+> Do NOT deploy until the relevant migration phase is approved.
+
+```bash
+# Deploy a single function
+supabase functions deploy health-check --no-verify-jwt
+
+# Deploy all functions
+supabase functions deploy --no-verify-jwt
+```
+
+The `--no-verify-jwt` flag is used during early development.
+Production functions that require authentication should omit this flag
+so Supabase enforces JWT verification automatically.
+
+## Testing against the remote project
+
+```bash
+curl -i https://<YOUR_PROJECT_REF>.supabase.co/functions/v1/health-check
+```
+
+## Notes
+
+- Edge Functions run on Deno, not Node.js.
+- Use `Deno.serve()` (not `serve()` from `std/http`).
+- Import from `https://esm.sh/` for npm packages.
+- The `_shared/` directory is not deployed as a function; it is only
+  used for shared imports.
