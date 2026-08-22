@@ -53,10 +53,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _showError(e.message);
     } catch (e) {
       final errStr = e.toString();
-      if (errStr.contains('YOUR_SUPABASE_URL') || errStr.contains('placeholder') || errStr.contains('Failed host lookup')) {
-        _showError('Invalid Supabase URL. Pass your real Supabase URL via --dart-define=SUPABASE_URL=...');
+      if (errStr.contains('YOUR_SUPABASE_URL') || errStr.contains('placeholder') || errStr.contains('Failed host lookup') || errStr.contains('test.supabase.co')) {
+        _showError('No live Supabase project configured. Please use [Demo Mode] below or run with your real Supabase URL.');
       } else {
-        _showError('Unable to connect. Check your internet connection & Supabase configuration.');
+        _showError('Unable to connect. Please check your internet connection and Supabase configuration.');
       }
     } finally {
       if (mounted) {
