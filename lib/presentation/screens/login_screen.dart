@@ -50,14 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, '/profile_setup');
       }
     } on AuthException catch (e) {
-      // Do not expose raw exception, use user friendly messages
-      if (e.message.contains('Invalid login credentials')) {
-        _showError('Invalid email or password. Please try again.');
-      } else if (e.message.contains('already registered')) {
-        _showError('An account with this email already exists.');
-      } else {
-        _showError('Authentication failed. Please check your details.');
-      }
+      _showError(e.message);
     } catch (e) {
       final errStr = e.toString();
       if (errStr.contains('YOUR_SUPABASE_URL') || errStr.contains('placeholder') || errStr.contains('Failed host lookup')) {
