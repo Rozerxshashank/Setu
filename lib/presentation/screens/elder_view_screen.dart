@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../../services/audio_recording_service.dart';
+import '../../services/supabase_storage_service.dart';
 import '../../models/task_model.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/firebase_task_repository.dart';
 
 class ElderViewScreen extends StatefulWidget {
-  const ElderViewScreen({super.key});
+  final TaskRepository? taskRepo;
+  const ElderViewScreen({super.key, this.taskRepo});
 
   @override
   State<ElderViewScreen> createState() => _ElderViewScreenState();
@@ -26,7 +27,7 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
   @override
   void initState() {
     super.initState();
-    _taskRepo = FirebaseTaskRepository();
+    _taskRepo = widget.taskRepo ?? FirebaseTaskRepository();
   }
 
   @override
@@ -91,13 +92,15 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
       const circleId = 'demo_circle_123';
       const userId = 'demo_user_123';
 
-      // 1. Upload to Firebase Storage
-      final fileName = 'elder_record_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      final storagePath = 'audio_inbox/$circleId/$userId/$fileName';
-      final storageRef = FirebaseStorage.instance.ref().child(storagePath);
-
+      // 1. Upload to Supabase Storage
       final file = File(_recordingPath!);
-      await storageRef.putFile(file);
+      final storageService = SupabaseStorageService();
+      final result = await storageService.uploadAudio(
+        circleId: circleId,
+        userId: userId,
+        audioFile: file,
+      );
+      final storagePath = result['storagePath']!;
 
       // 2. Trigger Cloud Function Processor with Storage Path
       final callable = FirebaseFunctions.instance.httpsCallable(
@@ -220,6 +223,7 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
               ),
               const Spacer(),
 
+              if (_errorMessage != null)
                 Semantics(
                   liveRegion: true,
                   child: Padding(
