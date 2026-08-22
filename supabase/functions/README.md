@@ -7,14 +7,14 @@ These Edge Functions will replace Firebase Cloud Functions as part of the
 
 ## Current Functions
 
-| Function         | Method | Status        | Auth     | DB Tables                         | Description                       |
-|------------------|--------|---------------|----------|-----------------------------------|-----------------------------------|
-| `health-check`   | GET    | Scaffolded    | None     | —                                 | Runtime health verification       |
-| `create-circle`  | POST   | Implemented   | Required | `family_circles`, `circle_members`| Family circle creation            |
-| `create-invite`  | POST   | Implemented   | Required | `invites`, `circle_members`       | Invite creation (primary only)    |
-| `join-circle`    | POST   | Implemented   | Required | `circle_members`, `invites`       | Invite redemption                 |
-| `process-audio`  | POST   | Not started   | Required | `daily_logs`                      | Audio → Gemini → DailyLog pipeline|
-| `daily-scheduler`| POST   | Not started   | Service  | `check_in_states`, `daily_logs`   | pg_cron triggered daily pipeline  |
+| Function                | Method | Status        | Auth     | DB Tables                         | Dependencies                 | Description                       |
+|-------------------------|--------|---------------|----------|-----------------------------------|------------------------------|-----------------------------------|
+| `health-check`          | GET    | Scaffolded    | None     | —                                 | —                            | Runtime health verification       |
+| `create-circle`         | POST   | Implemented   | Required | `family_circles`, `circle_members`| —                            | Family circle creation            |
+| `create-invite`         | POST   | Implemented   | Required | `invites`, `circle_members`       | —                            | Invite creation (primary only)    |
+| `join-circle`           | POST   | Implemented   | Required | `circle_members`, `invites`       | —                            | Invite redemption                 |
+| `process-audio-checkin` | POST   | Implemented   | Required | `daily_logs`, `tasks`             | Supabase Storage, Gemini API | Audio → Gemini → DailyLog pipeline|
+| `daily-scheduler`       | POST   | Not started   | Service  | `check_in_states`, `daily_logs`   | pg_cron                      | pg_cron triggered daily pipeline  |
 
 ## Project Structure
 
@@ -33,6 +33,9 @@ supabase/functions/
 │   └── index.ts             # Health check endpoint
 ├── join-circle/
 │   ├── index.ts             # Invite redemption
+│   └── index.test.ts        # Contract tests
+├── process-audio-checkin/
+│   ├── index.ts             # Audio → Gemini → daily_logs + tasks
 │   └── index.test.ts        # Contract tests
 └── README.md                # This file
 ```
