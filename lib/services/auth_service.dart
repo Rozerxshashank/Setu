@@ -3,7 +3,13 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 class AuthService {
   // FIREBASE (Backup & Demo)
-  final fb_auth.FirebaseAuth _firebaseAuth = fb_auth.FirebaseAuth.instance;
+  fb_auth.FirebaseAuth? get _firebaseAuth {
+    try {
+      return fb_auth.FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
   
   // SUPABASE (Primary)
   final sb.GoTrueClient _supabaseAuth = sb.Supabase.instance.client.auth;
@@ -14,7 +20,11 @@ class AuthService {
     if (_supabaseAuth.currentUser != null) {
       return _supabaseAuth.currentUser!.id;
     }
-    return _firebaseAuth.currentUser?.uid;
+    try {
+      return _firebaseAuth?.currentUser?.uid;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<sb.AuthResponse> signUp(String email, String password, String name) async {
@@ -34,13 +44,15 @@ class AuthService {
 
   Future<void> signOut() async {
     await _supabaseAuth.signOut();
-    await _firebaseAuth.signOut();
+    try {
+      await _firebaseAuth?.signOut();
+    } catch (_) {}
   }
 
   // Preserve Firebase methods for Demo / Backup
   Future<void> signInAnonymously() async {
     try {
-      await _firebaseAuth.signInAnonymously();
+      await _firebaseAuth?.signInAnonymously();
     } catch (_) {
       // Demo Mode fallback: allow local testing without Firebase config
     }
@@ -53,7 +65,9 @@ class AuthService {
     required Function(fb_auth.PhoneAuthCredential credential) verificationCompleted,
     required Function(String verificationId) codeAutoRetrievalTimeout,
   }) async {
-    await _firebaseAuth.verifyPhoneNumber(
+    final fb = _firebaseAuth;
+    if (fb == null) return;
+    await fb.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       verificationCompleted: verificationCompleted,
       verificationFailed: verificationFailed,
@@ -62,14 +76,16 @@ class AuthService {
     );
   }
 
-  Future<fb_auth.UserCredential> verifyOtp({
+  Future<fb_auth.UserCredential?> verifyOtp({
     required String verificationId,
     required String smsCode,
   }) async {
+    final fb = _firebaseAuth;
+    if (fb == null) return null;
     final credential = fb_auth.PhoneAuthProvider.credential(
       verificationId: verificationId,
       smsCode: smsCode,
     );
-    return await _firebaseAuth.signInWithCredential(credential);
+    return await fb.signInWithCredential(credential);
   }
 }

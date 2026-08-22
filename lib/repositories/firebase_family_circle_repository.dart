@@ -4,12 +4,27 @@ import '../models/family_circle.dart';
 import 'family_circle_repository.dart';
 
 class FirebaseFamilyCircleRepository implements FamilyCircleRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  FirebaseFirestore? get _firestore {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseFunctions? get _functions {
+    try {
+      return FirebaseFunctions.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<FamilyCircle?> getFamilyCircle(String circleId) async {
-    final doc = await _firestore
+    final db = _firestore;
+    if (db == null) return null;
+    final doc = await db
         .collection('familyCircles')
         .doc(circleId)
         .get();
@@ -19,8 +34,9 @@ class FirebaseFamilyCircleRepository implements FamilyCircleRepository {
 
   @override
   Future<void> createFamilyCircle(FamilyCircle circle) async {
-    // Client-side creates are blocked. We call the Cloud Function.
-    final callable = _functions.httpsCallable('createCircle');
+    final fn = _functions;
+    if (fn == null) return;
+    final callable = fn.httpsCallable('createCircle');
     await callable.call({
       'elderName': circle.elderName,
       'elderPhoneNumber': circle.elderPhoneNumber,
@@ -35,9 +51,9 @@ class FirebaseFamilyCircleRepository implements FamilyCircleRepository {
     String circleId,
     FamilyCircleMember member,
   ) async {
-    // In production, we don't arbitrarily add members. We redeem an invite.
-    // For this implementation, we map this to joinCircle assuming 'circleId' holds an invite token.
-    final callable = _functions.httpsCallable('joinCircle');
+    final fn = _functions;
+    if (fn == null) return;
+    final callable = fn.httpsCallable('joinCircle');
     await callable.call({'inviteId': circleId});
   }
 }

@@ -3,70 +3,91 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NotificationService {
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseMessaging? get _messaging {
+    try {
+      return FirebaseMessaging.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseFirestore? get _firestore {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseAuth? get _auth {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> initialize() async {
-    // Request permission (Caregiver side)
-    NotificationSettings settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    try {
+      final messaging = _messaging;
+      if (messaging == null) return;
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      // Get the initial token
-      String? token = await _messaging.getToken();
-      if (token != null) {
-        await _registerToken(token);
-      }
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-      // Listen for token refreshes
-      _messaging.onTokenRefresh.listen((newToken) {
-        _registerToken(newToken);
-      });
-
-      // Handle foreground messages
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        if (message.notification != null) {
-          print('Message received in foreground: ${message.notification?.title}');
-          // Note: In a full production app, you might show a local notification or snackbar here.
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        String? token = await messaging.getToken();
+        if (token != null) {
+          await _registerToken(token);
         }
-      });
 
-      // Handle taps when the app is in the background
-      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        print('Message clicked!');
-        // Tapping automatically brings the user to the app. 
-        // We could use a GlobalKey<NavigatorState> to route to /home if needed, 
-        // but the caregiver will naturally open to the dashboard.
-      });
-    }
+        messaging.onTokenRefresh.listen((newToken) {
+          _registerToken(newToken);
+        });
+
+        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          if (message.notification != null) {
+            print('Message received in foreground: ${message.notification?.title}');
+          }
+        });
+
+        FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+          print('Message clicked!');
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _registerToken(String token) async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      final userRef = _firestore.collection('users').doc(user.uid);
-      
-      // Use arrayUnion to safely add the token without overwriting other tokens
-      await userRef.set({
-        'fcmTokens': FieldValue.arrayUnion([token])
-      }, SetOptions(merge: true));
-    }
+    try {
+      final user = _auth?.currentUser;
+      final db = _firestore;
+      if (user != null && db != null) {
+        final userRef = db.collection('users').doc(user.uid);
+        await userRef.set({
+          'fcmTokens': FieldValue.arrayUnion([token])
+        }, SetOptions(merge: true));
+      }
+    } catch (_) {}
   }
 
   Future<void> removeToken() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      String? token = await _messaging.getToken();
-      if (token != null) {
-        final userRef = _firestore.collection('users').doc(user.uid);
-        await userRef.update({
-          'fcmTokens': FieldValue.arrayRemove([token])
-        });
+    try {
+      final user = _auth?.currentUser;
+      final messaging = _messaging;
+      final db = _firestore;
+      if (user != null && messaging != null && db != null) {
+        String? token = await messaging.getToken();
+        if (token != null) {
+          final userRef = db.collection('users').doc(user.uid);
+          await userRef.update({
+            'fcmTokens': FieldValue.arrayRemove([token])
+          });
+        }
       }
-    }
+    } catch (_) {}
   }
 }

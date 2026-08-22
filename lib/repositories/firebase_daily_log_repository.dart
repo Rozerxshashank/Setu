@@ -3,11 +3,19 @@ import '../models/daily_log.dart';
 import 'daily_log_repository.dart';
 
 class FirebaseDailyLogRepository implements DailyLogRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseFirestore? get _firestore {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<List<DailyLog>> getDailyLogs(String circleId) async {
-    final snapshot = await _firestore
+    final db = _firestore;
+    if (db == null) return [];
+    final snapshot = await db
         .collection('familyCircles')
         .doc(circleId)
         .collection('dailyLogs')
@@ -19,7 +27,9 @@ class FirebaseDailyLogRepository implements DailyLogRepository {
 
   @override
   Stream<List<DailyLog>> watchDailyLogs(String circleId) {
-    return _firestore
+    final db = _firestore;
+    if (db == null) return Stream.value([]);
+    return db
         .collection('familyCircles')
         .doc(circleId)
         .collection('dailyLogs')
@@ -31,8 +41,6 @@ class FirebaseDailyLogRepository implements DailyLogRepository {
 
   @override
   Future<void> addDailyLog(String circleId, DailyLog log) async {
-    // Client-side writes to daily logs are blocked by rules.
-    // This method exists in the interface but should not be called by the client in prod.
     throw UnsupportedError("Clients cannot directly write daily logs.");
   }
 }

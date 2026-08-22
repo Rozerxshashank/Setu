@@ -3,11 +3,19 @@ import '../models/task_model.dart';
 import 'task_repository.dart';
 
 class FirebaseTaskRepository implements TaskRepository {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  FirebaseFirestore? get _db {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<List<TaskModel>> getTasks(String circleId) async {
-    final snapshot = await _db
+    final db = _db;
+    if (db == null) return [];
+    final snapshot = await db
         .collection('familyCircles')
         .doc(circleId)
         .collection('tasks')
@@ -19,7 +27,9 @@ class FirebaseTaskRepository implements TaskRepository {
 
   @override
   Stream<List<TaskModel>> watchTasks(String circleId) {
-    return _db
+    final db = _db;
+    if (db == null) return Stream.value([]);
+    return db
         .collection('familyCircles')
         .doc(circleId)
         .collection('tasks')
@@ -32,7 +42,9 @@ class FirebaseTaskRepository implements TaskRepository {
 
   @override
   Future<void> addTask(String circleId, TaskModel task) async {
-    final docRef = _db
+    final db = _db;
+    if (db == null) return;
+    final docRef = db
         .collection('familyCircles')
         .doc(circleId)
         .collection('tasks')
