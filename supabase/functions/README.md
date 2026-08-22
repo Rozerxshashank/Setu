@@ -158,6 +158,24 @@ Expected success response:
 }
 ```
 
+## Elder Audio Flow (Phase 12)
+
+```
+Flutter (Elder View)
+  ↓ Upload audio
+Supabase Storage (audio_inbox bucket)
+  ↓ Call Edge Function
+process-audio-checkin Edge Function
+  ↓ Base64 audio + safety prompt
+Gemini Multimodal API
+  ↓ Structured extraction JSON
+create_daily_log_with_tasks RPC
+  ↓ Single atomic transaction
+daily_logs + tasks PostgreSQL tables
+  ↓ Supabase Realtime stream
+Caregiver Dashboard (HomeScreen)
+```
+
 ## Daily Log Atomic Layer (Phase 10)
 
 - **RPC Name**: `create_daily_log_with_tasks`

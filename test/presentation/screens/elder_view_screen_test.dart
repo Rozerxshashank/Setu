@@ -36,4 +36,19 @@ void main() {
     expect(find.text('Start Recording'), findsOneWidget);
     expect(find.byType(ElevatedButton), findsWidgets);
   });
+
+  testWidgets('ElderViewScreen renders recording instruction semantics', (tester) async {
+    final mockRepo = MockTaskRepositoryForElderView();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ElderViewScreen(taskRepo: mockRepo),
+      ),
+    );
+
+    expect(
+      find.text('Please send a voice message telling your family how you are doing.'),
+      findsOneWidget,
+    );
+  });
 }

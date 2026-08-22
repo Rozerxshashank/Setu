@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/audio_recording_service.dart';
 import '../../services/supabase_storage_service.dart';
+import '../../services/supabase_audio_processing_service.dart';
 import '../../models/task_model.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/firebase_task_repository.dart';
 import '../../repositories/supabase_task_repository.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ElderViewScreen extends StatefulWidget {
   final TaskRepository? taskRepo;
@@ -23,6 +24,7 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
   bool _isRecording = false;
   bool _hasRecorded = false;
   bool _isUploading = false;
+  bool _isProcessing = false;
   String? _recordingPath;
   String? _errorMessage;
 
@@ -86,19 +88,18 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
   }
 
   Future<void> _sendRecording() async {
-    if (_recordingPath == null) return;
+    if (_recordingPath == null || _isUploading || _isProcessing) return;
 
     setState(() {
       _isUploading = true;
+      _isProcessing = false;
       _errorMessage = null;
     });
 
     try {
-      // In a full app, these would come from the auth/state context
       const circleId = 'demo_circle_123';
       const userId = 'demo_user_123';
 
-      // 1. Upload to Supabase Storage
       final file = File(_recordingPath!);
       final storageService = SupabaseStorageService();
       final result = await storageService.uploadAudio(
@@ -108,11 +109,31 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
       );
       final storagePath = result['storagePath']!;
 
-      // 2. Trigger Cloud Function Processor with Storage Path
-      final callable = FirebaseFunctions.instance.httpsCallable(
-        'processAudioCheckIn',
-      );
-      await callable.call({'circleId': circleId, 'storagePath': storagePath});
+      setState(() {
+        _isUploading = false;
+        _isProcessing = true;
+      });
+
+      bool isSupabase = false;
+      try {
+        isSupabase = Supabase.instance.client.auth.currentUser != null;
+      } catch (_) {}
+
+      if (isSupabase) {
+        final audioProcService = SupabaseAudioProcessingService();
+        final procResult = await audioProcService.processAudioCheckIn(
+          circleId: circleId,
+          audioPath: storagePath,
+        );
+
+        if (procResult['success'] != true) {
+          throw Exception(procResult['error'] ?? 'Unable to process your message right now.');
+        }
+      } else {
+        // Fallback to Firebase Function
+        final callable = FirebaseFunctions.instance.httpsCallable('processAudioCheckIn');
+        await callable.call({'circleId': circleId, 'storagePath': storagePath});
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -126,11 +147,17 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
         );
       }
     } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
       if (mounted) {
+        setState(() {
+          _errorMessage = msg.contains('Unable to process') || msg.contains('temporarily unavailable') || msg.contains('access') || msg.contains('login')
+              ? msg
+              : 'Unable to process the recording right now. [Demo Mode]';
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Unable to process the recording right now. [Demo Mode]',
+              _errorMessage!,
               style: const TextStyle(fontSize: 18),
             ),
             backgroundColor: Colors.red,
@@ -142,6 +169,7 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
         setState(() {
           _hasRecorded = false;
           _isUploading = false;
+          _isProcessing = false;
           _recordingPath = null;
         });
       }
@@ -320,7 +348,9 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
               if (_hasRecorded && !_isRecording)
                 Semantics(
                   liveRegion: true,
-                  label: _isUploading ? "Uploading message" : "Message ready to send",
+                  label: (_isUploading || _isProcessing)
+                      ? (_isUploading ? "Uploading message" : "Processing message")
+                      : "Message ready to send",
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -328,18 +358,20 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            _isUploading ? Icons.cloud_upload : Icons.check_circle, 
-                            color: _isUploading ? Colors.blue : Colors.green, 
+                            (_isUploading || _isProcessing) ? Icons.cloud_upload : Icons.check_circle, 
+                            color: (_isUploading || _isProcessing) ? Colors.blue : Colors.green, 
                             size: 36, 
-                            semanticLabel: _isUploading ? 'Upload icon' : 'Success icon'
+                            semanticLabel: (_isUploading || _isProcessing) ? 'Upload icon' : 'Success icon'
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            _isUploading ? 'Uploading...' : 'Message ready',
+                            _isUploading
+                                ? 'Uploading...'
+                                : (_isProcessing ? 'Processing...' : 'Message ready'),
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: _isUploading ? Colors.blue : Colors.green,
+                              color: (_isUploading || _isProcessing) ? Colors.blue : Colors.green,
                             ),
                           ),
                         ],
@@ -349,11 +381,13 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
                         button: true,
                         label: "Send message button",
                         child: ElevatedButton.icon(
-                          onPressed: _isUploading ? null : _sendRecording,
+                          onPressed: (_isUploading || _isProcessing) ? null : _sendRecording,
                           icon: const Icon(Icons.send, size: 40, semanticLabel: 'Send icon'),
-                          label: const Text(
-                            'Send to Family',
-                            style: TextStyle(fontSize: 28),
+                          label: Text(
+                            _isUploading
+                                ? 'Uploading...'
+                                : (_isProcessing ? 'Processing...' : 'Send to Family'),
+                            style: const TextStyle(fontSize: 28),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
@@ -367,7 +401,7 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      if (!_isUploading)
+                      if (!_isUploading && !_isProcessing)
                         Semantics(
                           button: true,
                           label: "Discard and record again button",
