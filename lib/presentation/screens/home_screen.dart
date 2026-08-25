@@ -16,6 +16,7 @@ import '../widgets/daily_log_card.dart';
 import '../widgets/task_list_widget.dart';
 import '../widgets/add_task_dialog.dart';
 import '../../services/notification_service.dart';
+import '../../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserRepository? userRepo;
@@ -110,17 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Back to Login',
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              },
-            ),
+            automaticallyImplyLeading: false,
             title: circleIds.length > 1
                 ? DropdownButton<String>(
                     value: _selectedCircleId,
@@ -140,11 +131,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 : const Text('Setu Dashboard'),
             actions: [
-               IconButton(
-                 icon: const Icon(Icons.mic, color: Colors.purple),
-                 tooltip: 'Demo: Elder View',
-                 onPressed: () => Navigator.pushNamed(context, '/elder_view'),
-               ),
+              IconButton(
+                icon: const Icon(Icons.mic, color: Colors.purple),
+                tooltip: 'Demo: Elder View',
+                onPressed: () => Navigator.pushNamed(context, '/elder_view'),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout),
+                tooltip: 'Logout',
+                onPressed: () async {
+                  await AuthService().signOut();
+                  if (context.mounted) {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  }
+                },
+              ),
             ],
           ),
           body: StreamBuilder<List<DailyLog>>(
@@ -244,23 +245,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildZeroCirclesState() {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Setu Dashboard'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back to Login',
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, '/login');
-            }
-          },
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.mic, color: Colors.purple),
             tooltip: 'Demo: Elder View',
             onPressed: () => Navigator.pushNamed(context, '/elder_view'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
+              await AuthService().signOut();
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
           ),
         ],
       ),
