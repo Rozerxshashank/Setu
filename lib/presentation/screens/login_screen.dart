@@ -40,17 +40,49 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (_isSignupMode) {
-        await _authService.signUp(email, password, name);
-        // Supabase might require email confirmation, but assuming auto-confirm for now
+        final res = await _authService.signUp(email, password, name);
+        if (mounted) {
+          if (res.session == null) {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Verification Email Sent'),
+                content: Text(
+                  'Account created successfully! We sent a verification link to $email. Please check your email and verify your account before logging in.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      setState(() {
+                        _isSignupMode = false;
+                        _passwordController.clear();
+                      });
+                    },
+                    child: const Text('OK, Go to Login'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          } else {
+            Navigator.pushReplacementNamed(context, '/profile_setup');
+          }
+        }
       } else {
         await _authService.signIn(email, password);
-      }
-      
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/profile_setup');
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/profile_setup');
+        }
       }
     } on AuthException catch (e) {
-      _showError(e.message);
+      if (e.message.contains('Invalid login credentials')) {
+        _showError('Invalid email or password. Please try again.');
+      } else if (e.message.contains('already registered')) {
+        _showError('An account with this email already exists.');
+      } else {
+        _showError(e.message);
+      }
     } catch (e) {
       final errStr = e.toString();
       if (errStr.contains('YOUR_SUPABASE_URL') || errStr.contains('placeholder') || errStr.contains('Failed host lookup') || errStr.contains('test.supabase.co')) {
