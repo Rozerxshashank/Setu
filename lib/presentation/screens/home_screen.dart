@@ -299,7 +299,63 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pushNamed(context, '/create_circle');
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.group_add_outlined),
+              label: const Text(
+                'Join Existing Circle with Invite Code',
+                style: TextStyle(fontSize: 16),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              onPressed: () {
+                final codeController = TextEditingController();
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Join Family Circle'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('Enter the 6-character Invite Code shared by your family member:'),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: codeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Invite Code (e.g. SETU-89214)',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.key),
+                          ),
+                          textCapitalization: TextCapitalization.characters,
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          final code = codeController.text.trim();
+                          if (code.isEmpty) return;
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Successfully joined circle with code "$code"!'),
+                            ),
+                          );
+                        },
+                        child: const Text('Join Circle'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
             OutlinedButton.icon(
               icon: const Icon(Icons.mic, color: Colors.purple),
               label: const Text(
