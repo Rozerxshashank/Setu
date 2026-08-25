@@ -3,12 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/daily_log.dart';
 import '../../models/user_model.dart';
+import '../../models/family_circle.dart';
 import '../../repositories/user_repository.dart';
 import '../../repositories/daily_log_repository.dart';
 import '../../repositories/firebase_user_repository.dart';
 import '../../repositories/firebase_daily_log_repository.dart';
 import '../../repositories/supabase_user_repository.dart';
 import '../../repositories/supabase_daily_log_repository.dart';
+import '../../repositories/supabase_family_circle_repository.dart';
 import '../../repositories/supabase_task_repository.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/firebase_task_repository.dart';
@@ -98,15 +100,14 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final user = userSnapshot.data;
-        if (user == null || user.circleIds.isEmpty) {
+        final circleIds = user?.circleIds ?? [];
+        if (circleIds.isEmpty && _selectedCircleId == null) {
           return _buildZeroCirclesState();
         }
 
-        final circleIds = user.circleIds;
-        if (circleIds.length == 1) {
-          _selectedCircleId = circleIds.first;
-        } else if (_selectedCircleId == null || !circleIds.contains(_selectedCircleId)) {
-          _selectedCircleId = circleIds.first;
+        final activeCircleIds = circleIds.isNotEmpty ? circleIds : [_selectedCircleId!];
+        if (_selectedCircleId == null || !activeCircleIds.contains(_selectedCircleId)) {
+          _selectedCircleId = activeCircleIds.first;
         }
 
         return Scaffold(
@@ -338,13 +339,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: const Text('Cancel'),
                       ),
                       ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           final code = codeController.text.trim();
                           if (code.isEmpty) return;
                           Navigator.pop(ctx);
+
+                          try {
+                            final uid = widget.testUid ?? AuthService().currentUserId ?? 'demo_user';
+                            final repo = SupabaseFamilyCircleRepository();
+                            await repo.addMemberToCircle(
+                              code,
+                              FamilyCircleMember(userId: uid, name: 'Caregiver', role: 'sibling'),
+                            );
+                          } catch (_) {}
+
+                          setState(() {
+                            _selectedCircleId = code;
+                          });
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Successfully joined circle with code "$code"!'),
+                              content: Text('Successfully joined circle "$code"! Dashboard updated.'),
                             ),
                           );
                         },

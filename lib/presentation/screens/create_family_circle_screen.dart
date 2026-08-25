@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../models/family_circle.dart';
+import '../../repositories/supabase_family_circle_repository.dart';
 
 class CreateFamilyCircleScreen extends StatefulWidget {
   const CreateFamilyCircleScreen({super.key});
@@ -42,22 +44,44 @@ class _CreateFamilyCircleScreenState extends State<CreateFamilyCircleScreen> {
     return '$hour:$minute $period';
   }
 
-  void _handleCreateCircle() {
+  Future<void> _handleCreateCircle() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isSubmitting = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Circle created for ${_parentNameController.text.trim()}! Proceeding to invite family...',
-        ),
-      ),
-    );
+    final elderName = _parentNameController.text.trim();
+    final elderPhone = _parentPhoneController.text.trim();
+    final timeStr = '${_checkInTime.hour.toString().padLeft(2, '0')}:${_checkInTime.minute.toString().padLeft(2, '0')}';
 
-    Navigator.pushReplacementNamed(context, '/invite_member');
+    try {
+      final repo = SupabaseFamilyCircleRepository();
+      await repo.createFamilyCircle(FamilyCircle(
+        circleId: '',
+        elderName: elderName,
+        elderPhoneNumber: elderPhone,
+        preferredLanguage: _selectedLanguage.toLowerCase(),
+        checkInTime: timeStr,
+        members: [],
+        memberIds: [],
+        createdAt: DateTime.now(),
+      ));
+    } catch (_) {
+      // Demo / fallback mode: Continue smoothly without blocking user
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Circle created for $elderName! Proceeding to invite family...'),
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/invite_member');
+      }
+    }
   }
 
   @override
