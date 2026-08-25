@@ -63,6 +63,8 @@ class _CreateFamilyCircleScreenState extends State<CreateFamilyCircleScreen> {
         elderPhoneNumber: elderPhone,
         preferredLanguage: _selectedLanguage.toLowerCase(),
         checkInTime: timeStr,
+        timezone: 'Asia/Kolkata',
+        interactionChannel: 'whatsapp',
         members: [],
         memberIds: [],
         createdAt: DateTime.now(),
