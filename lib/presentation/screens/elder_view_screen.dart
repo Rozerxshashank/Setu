@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/audio_recording_service.dart';
 import '../../services/supabase_storage_service.dart';
 import '../../services/supabase_audio_processing_service.dart';
 import '../../models/task_model.dart';
 import '../../repositories/task_repository.dart';
-import '../../repositories/firebase_task_repository.dart';
 import '../../repositories/supabase_task_repository.dart';
 
 class ElderViewScreen extends StatefulWidget {
@@ -31,11 +29,7 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
   @override
   void initState() {
     super.initState();
-    bool isSupabase = false;
-    try {
-      isSupabase = Supabase.instance.client.auth.currentUser != null;
-    } catch (_) {}
-    _taskRepo = widget.taskRepo ?? (isSupabase ? SupabaseTaskRepository() : FirebaseTaskRepository());
+    _taskRepo = widget.taskRepo ?? SupabaseTaskRepository();
   }
 
   @override
@@ -114,29 +108,14 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
         _isProcessing = true;
       });
 
-      bool isSupabase = false;
-      try {
-        isSupabase = Supabase.instance.client.auth.currentUser != null;
-      } catch (_) {}
+      final audioProcService = SupabaseAudioProcessingService();
+      final procResult = await audioProcService.processAudioCheckIn(
+        circleId: circleId,
+        audioPath: storagePath,
+      );
 
-      if (isSupabase) {
-        final audioProcService = SupabaseAudioProcessingService();
-        final procResult = await audioProcService.processAudioCheckIn(
-          circleId: circleId,
-          audioPath: storagePath,
-        );
-
-        if (procResult['success'] != true) {
-          throw Exception(procResult['error'] ?? 'Unable to process your message right now.');
-        }
-      } else {
-        // Fallback to Firebase Function
-        try {
-          final callable = FirebaseFunctions.instance.httpsCallable('processAudioCheckIn');
-          await callable.call({'circleId': circleId, 'storagePath': storagePath});
-        } catch (_) {
-          // Demo mode fallback when Firebase Cloud Functions are unconfigured
-        }
+      if (procResult['success'] != true) {
+        throw Exception(procResult['error'] ?? 'Unable to process your message right now.');
       }
 
       if (mounted) {

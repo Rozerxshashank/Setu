@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/user_model.dart';
-import '../../repositories/firebase_user_repository.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -89,20 +87,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             'name': _nameController.text.trim(),
                             'phone_number': supabaseUser.phone ?? 'Unknown',
                           });
-                        } else {
-                          try {
-                            final firebaseUid = FirebaseAuth.instance.currentUser?.uid;
-                            if (firebaseUid != null) {
-                              final userRepo = FirebaseUserRepository();
-                              await userRepo.createUser(UserModel(
-                                userId: firebaseUid,
-                                name: _nameController.text.trim(),
-                                phoneNumber: 'Unknown',
-                                circleIds: [],
-                                fcmTokens: [],
-                              ));
-                            }
-                          } catch (_) {}
                         }
                       } catch (_) {
                         // Demo mode fallback: continue gracefully without blocking user

@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/daily_log.dart';
 import '../../models/user_model.dart';
 import '../../models/family_circle.dart';
 import '../../repositories/user_repository.dart';
 import '../../repositories/daily_log_repository.dart';
-import '../../repositories/firebase_user_repository.dart';
-import '../../repositories/firebase_daily_log_repository.dart';
 import '../../repositories/supabase_user_repository.dart';
 import '../../repositories/supabase_daily_log_repository.dart';
 import '../../repositories/supabase_family_circle_repository.dart';
 import '../../repositories/supabase_task_repository.dart';
 import '../../repositories/task_repository.dart';
-import '../../repositories/firebase_task_repository.dart';
 import '../widgets/daily_log_card.dart';
 import '../widgets/task_list_widget.dart';
 import '../widgets/add_task_dialog.dart';
@@ -42,14 +38,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    bool isSupabase = false;
-    try {
-      isSupabase = Supabase.instance.client.auth.currentUser != null;
-    } catch (_) {}
 
-    _userRepo = widget.userRepo ?? (isSupabase ? SupabaseUserRepository() : FirebaseUserRepository());
-    _logRepo = widget.logRepo ?? (isSupabase ? SupabaseDailyLogRepository() : FirebaseDailyLogRepository());
-    _taskRepo = widget.taskRepo ?? (isSupabase ? SupabaseTaskRepository() : FirebaseTaskRepository());
+    _userRepo = widget.userRepo ?? SupabaseUserRepository();
+    _logRepo = widget.logRepo ?? SupabaseDailyLogRepository();
+    _taskRepo = widget.taskRepo ?? SupabaseTaskRepository();
     
     // Initialize notifications (requests permission and registers FCM token)
     try {
@@ -65,11 +57,8 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       supabaseUid = Supabase.instance.client.auth.currentUser?.id;
     } catch (_) {}
-    String? firebaseUid;
-    try {
-      firebaseUid = FirebaseAuth.instance.currentUser?.uid;
-    } catch (_) {}
-    final uid = widget.testUid ?? (supabaseUid ?? (firebaseUid ?? 'demo_user_123'));
+    
+    final uid = widget.testUid ?? (supabaseUid ?? 'demo_user_123');
 
     return StreamBuilder<UserModel?>(
       stream: _userRepo.watchUser(uid),
