@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class FamilyCircleMember {
   final String userId;
   final String name;
@@ -33,7 +31,7 @@ class FamilyCircle {
   final String timezone; // "Asia/Kolkata"
   final String interactionChannel; // "whatsapp" | "call"
   final List<FamilyCircleMember> members;
-  final List<String> memberIds; // Added for Firestore Security Rules efficiency
+  final List<String> memberIds; // Added for Security Rules efficiency
   final DateTime createdAt;
 
   FamilyCircle({
@@ -50,6 +48,11 @@ class FamilyCircle {
   });
 
   factory FamilyCircle.fromJson(Map<String, dynamic> json) {
+    DateTime parsedCreatedAt = DateTime.now();
+    if (json['createdAt'] != null && json['createdAt'] is String) {
+      parsedCreatedAt = DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now();
+    }
+
     return FamilyCircle(
       circleId: json['circleId'] as String,
       elderName: json['elderName'] as String,
@@ -66,7 +69,7 @@ class FamilyCircle {
               .toList() ??
           [],
       memberIds: List<String>.from(json['memberIds'] ?? []),
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
+      createdAt: parsedCreatedAt,
     );
   }
 
@@ -81,7 +84,7 @@ class FamilyCircle {
       'interactionChannel': interactionChannel,
       'members': members.map((e) => e.toJson()).toList(),
       'memberIds': memberIds,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 }

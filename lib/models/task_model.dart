@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class TaskModel {
   final String taskId;
   final String createdBy;
@@ -18,12 +16,17 @@ class TaskModel {
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
+    DateTime parsedCreatedAt = DateTime.now();
+    if (json['createdAt'] != null && json['createdAt'] is String) {
+      parsedCreatedAt = DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now();
+    }
+
     return TaskModel(
       taskId: json['taskId'] as String,
       createdBy: json['createdBy'] as String,
       text: json['text'] as String,
       status: json['status'] as String,
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
+      createdAt: parsedCreatedAt,
       deliveredInCheckInDate: json['deliveredInCheckInDate'] as String?,
     );
   }
@@ -34,7 +37,7 @@ class TaskModel {
       'createdBy': createdBy,
       'text': text,
       'status': status,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt.toIso8601String(),
       'deliveredInCheckInDate': deliveredInCheckInDate,
     };
   }

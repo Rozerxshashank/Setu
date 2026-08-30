@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../models/user_model.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -47,18 +46,26 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Icon(Icons.person_outline, size: 64, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 16),
             const Text(
               'What should we call you?',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            Text(
+              'This name will be visible to your Family Circle.',
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
             Semantics(
               label: 'Your Name Input',
               child: TextField(
                 controller: _nameController,
                 decoration: const InputDecoration(
                   labelText: 'Your Name',
-                  border: OutlineInputBorder(),
                 ),
                 style: const TextStyle(fontSize: 18),
               ),
@@ -69,7 +76,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 : ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      minimumSize: const Size(double.infinity, 60),
+                      minimumSize: const Size(double.infinity, 56),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
                     ),
                     onPressed: () async {
                       if (_nameController.text.trim().isEmpty) return;
@@ -104,7 +113,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       label: 'Complete Setup',
                       child: const Text(
                         'Complete Setup',
-                        style: TextStyle(fontSize: 18),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),

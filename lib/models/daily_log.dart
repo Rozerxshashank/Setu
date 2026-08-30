@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class DailyLog {
   final String date; // "2026-08-22"
   final String status; // "green" | "yellow" | "red" | "grey"
@@ -23,12 +21,8 @@ class DailyLog {
 
   factory DailyLog.fromJson(Map<String, dynamic> json) {
     DateTime? parsedRespondedAt;
-    if (json['respondedAt'] != null) {
-      if (json['respondedAt'] is Timestamp) {
-        parsedRespondedAt = (json['respondedAt'] as Timestamp).toDate();
-      } else if (json['respondedAt'] is String) {
-        parsedRespondedAt = DateTime.tryParse(json['respondedAt'] as String);
-      }
+    if (json['respondedAt'] != null && json['respondedAt'] is String) {
+      parsedRespondedAt = DateTime.tryParse(json['respondedAt'] as String);
     }
 
     return DailyLog(
@@ -53,9 +47,7 @@ class DailyLog {
       'summary': summary,
       'medicationTaken': medicationTaken,
       'flaggedConcerns': flaggedConcerns,
-      'respondedAt': respondedAt != null
-          ? Timestamp.fromDate(respondedAt!)
-          : null,
+      'respondedAt': respondedAt?.toIso8601String(),
       'audioUrl': audioUrl,
     };
   }

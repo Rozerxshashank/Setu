@@ -261,50 +261,62 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.group_add, size: 80, color: Colors.grey),
-            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.indigo.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.group_add_rounded, size: 64, color: Colors.indigo.shade400),
+            ),
+            const SizedBox(height: 32),
             const Text(
-              "You're not part of a Family Circle yet.",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              "No Family Circle Yet",
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             const Text(
-              'Create a Family Circle to start daily check-ins for your parent.',
-              style: TextStyle(fontSize: 16, color: Colors.black54),
+              'Create a new circle or join an existing one to start receiving daily check-ins from your parent.',
+              style: TextStyle(fontSize: 16, color: Colors.black54, height: 1.4),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 48),
             ElevatedButton.icon(
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_circle_outline),
               label: const Text(
                 'Create Family Circle',
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                minimumSize: const Size(double.infinity, 60),
+                minimumSize: const Size(double.infinity, 56),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
               ),
               onPressed: () {
                 Navigator.pushNamed(context, '/create_circle');
               },
             ),
             const SizedBox(height: 12),
+            const SizedBox(height: 16),
             OutlinedButton.icon(
               icon: const Icon(Icons.group_add_outlined),
               label: const Text(
-                'Join Existing Circle with Invite Code',
-                style: TextStyle(fontSize: 16),
+                'Join via Invite Code',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                minimumSize: const Size(double.infinity, 50),
+                minimumSize: const Size(double.infinity, 56),
+                side: BorderSide(color: Colors.indigo.shade200, width: 2),
               ),
               onPressed: () {
                 final codeController = TextEditingController();
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     title: const Text('Join Family Circle'),
                     content: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -315,8 +327,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           controller: codeController,
                           decoration: const InputDecoration(
                             labelText: 'Invite Code (e.g. SETU-89214)',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.key),
                           ),
                           textCapitalization: TextCapitalization.characters,
                         ),
@@ -332,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           final code = codeController.text.trim();
                           if (code.isEmpty) return;
                           Navigator.pop(ctx);
-
+                          // existing code...
                           try {
                             final uid = widget.testUid ?? AuthService().currentUserId ?? 'demo_user';
                             final repo = SupabaseFamilyCircleRepository();
@@ -349,6 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Successfully joined circle "$code"! Dashboard updated.'),
+                              behavior: SnackBarBehavior.floating,
                             ),
                           );
                         },
@@ -359,16 +370,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.mic, color: Colors.purple),
-              label: const Text(
+            const Spacer(),
+            TextButton.icon(
+              icon: Icon(Icons.mic, color: Colors.purple.shade400),
+              label: Text(
                 'Try Elder Audio Check-in View',
-                style: TextStyle(fontSize: 16, color: Colors.purple),
+                style: TextStyle(fontSize: 15, color: Colors.purple.shade600, fontWeight: FontWeight.w600),
               ),
-              style: OutlinedButton.styleFrom(
+              style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                minimumSize: const Size(double.infinity, 50),
               ),
               onPressed: () {
                 Navigator.pushNamed(context, '/elder_view');
@@ -383,15 +393,31 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildEmptyLogsState() {
     return Semantics(
       label: "No check-ins yet",
-      child: const Center(
+      child: Center(
         child: Padding(
-          padding: EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.inbox, size: 64, color: Colors.grey, semanticLabel: 'Inbox icon'),
-              SizedBox(height: 16),
-              Text('No check-ins yet', style: TextStyle(fontSize: 18, color: Colors.grey)),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.inbox_outlined, size: 64, color: Colors.blueGrey.shade300, semanticLabel: 'Inbox icon'),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'No check-ins yet', 
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.blueGrey.shade700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'When your parent completes a check-in, the update will appear here.', 
+                style: TextStyle(fontSize: 15, color: Colors.blueGrey.shade400),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),

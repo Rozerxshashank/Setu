@@ -127,9 +127,17 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Icon(Icons.family_restroom, size: 64, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 16),
             Text(
               _isSignupMode ? 'Sign up for Setu' : 'Welcome back to Setu',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Bridging the distance between you and your parents.',
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -140,7 +148,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _nameController,
                   decoration: const InputDecoration(
                     labelText: 'Full Name',
-                    border: OutlineInputBorder(),
                   ),
                   style: const TextStyle(fontSize: 18),
                 ),
@@ -152,7 +159,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _emailController,
                 decoration: const InputDecoration(
                   labelText: 'Email',
-                  border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 style: const TextStyle(fontSize: 18),
@@ -165,7 +171,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _passwordController,
                 decoration: const InputDecoration(
                   labelText: 'Password',
-                  border: OutlineInputBorder(),
                 ),
                 obscureText: true,
                 style: const TextStyle(fontSize: 18),
@@ -177,12 +182,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 : ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      minimumSize: const Size(double.infinity, 60),
+                      minimumSize: const Size(double.infinity, 56),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
                     ),
                     onPressed: _submitAuth,
                     child: Text(
                       _isSignupMode ? 'Sign Up' : 'Login',
-                      style: const TextStyle(fontSize: 18),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
             const SizedBox(height: 16),

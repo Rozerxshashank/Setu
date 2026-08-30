@@ -60,7 +60,12 @@ class DailyLogCard extends StatelessWidget {
       button: true,
       child: Card(
         margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        elevation: 2,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
             showModalBottomSheet(
@@ -70,7 +75,7 @@ class DailyLogCard extends StatelessWidget {
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -79,62 +84,103 @@ class DailyLogCard extends StatelessWidget {
                   children: [
                     Text(
                       log.date,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        letterSpacing: 0.2,
+                      ),
                     ),
-                    Row(
-                      children: [
-                        Icon(_getStatusIcon(), color: _getStatusColor(), size: 20, semanticLabel: 'Status icon'),
-                        const SizedBox(width: 4),
-                        Text(
-                          statusLabel,
-                          style: TextStyle(
-                            color: _getStatusColor(),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  log.summary,
-                  style: const TextStyle(fontSize: 15),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  children: [
-                    if (log.medicationTaken != null)
-                      Row(
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor().withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.medical_services,
-                            size: 16,
-                            color: log.medicationTaken! ? Colors.green : Colors.red,
-                            semanticLabel: 'Medication icon'
-                          ),
-                          const SizedBox(width: 4),
+                          Icon(_getStatusIcon(), color: _getStatusColor(), size: 16, semanticLabel: 'Status icon'),
+                          const SizedBox(width: 6),
                           Text(
-                            log.medicationTaken! ? 'Medication Taken' : 'Medication Missed',
-                            style: const TextStyle(fontSize: 12),
+                            statusLabel,
+                            style: TextStyle(
+                              color: _getStatusColor(),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  log.summary,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade800,
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    if (log.medicationTaken != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.medical_services_outlined,
+                              size: 14,
+                              color: log.medicationTaken! ? Colors.green : Colors.red,
+                              semanticLabel: 'Medication icon'
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              log.medicationTaken! ? 'Meds Taken' : 'Meds Missed',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     if (log.flaggedConcerns.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.flag, size: 16, color: Colors.orange, semanticLabel: 'Flag icon'),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${log.flaggedConcerns.length} concern(s)',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.orange.shade200),
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.flag_outlined, size: 14, color: Colors.orange.shade800, semanticLabel: 'Flag icon'),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${log.flaggedConcerns.length} concern(s)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.orange.shade900,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                   ],
                 ),

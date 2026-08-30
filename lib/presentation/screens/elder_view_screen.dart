@@ -164,7 +164,9 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Elder Check-in'),
-        backgroundColor: Colors.blue.shade100,
+        backgroundColor: Colors.indigo.shade50,
+        elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Back',
@@ -186,12 +188,13 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
               // Mock Elder Info & Prompt
               Semantics(
                 header: true,
-                child: const Text(
+                child: Text(
                   'Good morning Amma. How are you feeling today?',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.indigo.shade900,
+                    height: 1.3,
                   ),
                 ),
               ),
@@ -210,8 +213,9 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
                     margin: const EdgeInsets.only(bottom: 32),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade100,
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.amber.shade50,
+                      border: Border.all(color: Colors.amber.shade200),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -244,9 +248,9 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
 
               Semantics(
                 label: "Instruction",
-                child: const Text(
+                child: Text(
                   'Please send a voice message telling your family how you are doing.',
-                  style: TextStyle(fontSize: 24, color: Colors.black87),
+                  style: TextStyle(fontSize: 22, color: Colors.blueGrey.shade700, height: 1.4),
                 ),
               ),
               const Spacer(),
@@ -280,7 +284,7 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
                       style: TextStyle(fontSize: 28),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Colors.indigo,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 32),
                       shape: RoundedRectangleBorder(
@@ -324,7 +328,7 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _stopRecording,
                           icon: const Icon(Icons.stop, size: 48, semanticLabel: 'Stop icon'),
-                          label: const Text('Stop', style: TextStyle(fontSize: 28)),
+                          label: const Text('Stop Recording', style: TextStyle(fontSize: 28)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black87,
                             foregroundColor: Colors.white,
@@ -384,7 +388,7 @@ class _ElderViewScreenState extends State<ElderViewScreen> {
                             style: const TextStyle(fontSize: 28),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: Colors.teal,
                             foregroundColor: Colors.white,
                             disabledBackgroundColor: Colors.grey.shade400,
                             padding: const EdgeInsets.symmetric(vertical: 32),
