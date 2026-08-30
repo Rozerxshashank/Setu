@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:setu/models/daily_log.dart';
 
 void main() {
@@ -13,7 +12,7 @@ void main() {
         'summary': 'Parent has knee pain',
         'medicationTaken': true,
         'flaggedConcerns': ['knee pain'],
-        'respondedAt': Timestamp.fromDate(now),
+        'respondedAt': now.toIso8601String(),
         'audioUrl': 'audio_inbox/123/file.m4a',
       };
 

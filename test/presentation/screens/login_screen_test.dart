@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:setu/presentation/screens/login_screen.dart';
 import 'package:setu/services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
 class MockAuthServiceForTest implements AuthService {
   bool isLoginMode = true;
@@ -42,15 +41,6 @@ class MockAuthServiceForTest implements AuthService {
     return sb.AuthResponse(user: null, session: null);
   }
 
-  @override
-  Future<fb_auth.UserCredential> verifyOtp({required String verificationId, required String smsCode}) async {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> verifyPhoneNumber({required String phoneNumber, required Function(String verificationId, int? resendToken) codeSent, required Function(fb_auth.FirebaseAuthException e) verificationFailed, required Function(fb_auth.PhoneAuthCredential credential) verificationCompleted, required Function(String verificationId) codeAutoRetrievalTimeout}) async {
-    throw UnimplementedError();
-  }
 }
 
 void main() {

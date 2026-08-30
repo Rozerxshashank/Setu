@@ -5,10 +5,7 @@ import 'package:setu/repositories/supabase_user_repository.dart';
 import 'package:setu/repositories/supabase_family_circle_repository.dart';
 import 'package:setu/repositories/supabase_daily_log_repository.dart';
 import 'package:setu/repositories/supabase_task_repository.dart';
-import 'package:setu/models/user_model.dart';
 import 'package:setu/models/daily_log.dart';
-import 'package:setu/models/task_model.dart';
-import 'package:setu/models/family_circle.dart';
 
 void main() {
   setUpAll(() async {
